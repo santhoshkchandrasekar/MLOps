@@ -3,8 +3,6 @@ name: ML Metrics Testing with Pytest
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build:
@@ -19,19 +17,17 @@ jobs:
       with:
         python-version: '3.8'
 
-    - name: Install pytest only
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest==7.4.0
+    - name: Install pytest directly
+      run: pip install pytest
 
-    - name: Run ML Metrics Pytest Tests
+    - name: Run pytest tests
       run: |
         cd Labs/Github_Labs/Lab1
         pytest test/test_pytest.py -v
 
     - name: Notify on Success
       if: success()
-      run: echo "✅ ML Metrics pytest tests passed successfully!"
+      run: echo "✅ ML Metrics pytest tests passed!"
 
     - name: Notify on Failure
       if: failure()
