@@ -22,24 +22,23 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r Labs/Github_Labs/Lab1/requirements.txt
+        pip install -r requirements.txt
 
-    - name: Run ML Metrics Pytest Tests
+    - name: Run Tests and Generate XML Report
       run: |
-        cd Labs/Github_Labs/Lab1
-        pytest test/test_pytest.py --junitxml=pytest-report.xml -v
+        pytest test/test_pytest.py --junitxml=pytest-report.xml
       continue-on-error: false
 
     - name: Upload Test Results
       uses: actions/upload-artifact@v2
       with:
-        name: pytest-test-results
-        path: Labs/Github_Labs/Lab1/pytest-report.xml
+        name: test-results
+        path: pytest-report.xml
 
     - name: Notify on Success
       if: success()
-      run: echo "✅ ML Metrics pytest tests passed successfully!"
+      run: echo "ML Metrics tests passed successfully!"
 
     - name: Notify on Failure
       if: failure()
-      run: echo "❌ ML Metrics pytest tests failed!"
+      run: echo "ML Metrics tests failed!"
