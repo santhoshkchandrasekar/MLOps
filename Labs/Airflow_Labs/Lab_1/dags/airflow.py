@@ -1,7 +1,6 @@
 # Import necessary libraries and modules
 from airflow import DAG
-# from airflow.operators.python import PythonOperator
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 from src.lab import load_data, data_preprocessing, build_save_model, load_model_elbow
 
@@ -12,17 +11,18 @@ from src.lab import load_data, data_preprocessing, build_save_model, load_model_
 
 # Define default arguments for your DAG
 default_args = {
-    'owner': 'your_name',
-    'start_date': datetime(2025, 1, 15),
-    'retries': 0,  # Number of retries in case of task failure
-    'retry_delay': timedelta(minutes=5),  # Delay before retries
+    'owner': 'santhosh_chandrasekar',  # CUSTOMIZATION 1: Your name
+    'start_date': datetime(2026, 2, 13),  # CUSTOMIZATION 2: Today's date
+    'retries': 1,  # CUSTOMIZATION 3: Changed from 0 to 1 retry
+    'retry_delay': timedelta(minutes=3),  # CUSTOMIZATION 4: Changed from 5 to 3 minutes
 }
 
-# Create a DAG instance named 'Airflow_Lab1' with the defined default arguments
+# Create a DAG instance named 'Santhosh_MLOps_Lab1' with the defined default arguments
 with DAG(
-    'Airflow_Lab1',
+    'Santhosh_MLOps_Lab1',  # CUSTOMIZATION 5: Changed DAG name
     default_args=default_args,
-    description='Dag example for Lab 1 of Airflow series',
+    description='Custom MLOps Lab 1 - K-Means Clustering Pipeline by Santhosh',  # CUSTOMIZATION 6: Custom description
+    schedule_interval='@daily',  # CUSTOMIZATION 7: Added daily schedule
     catchup=False,
 ) as dag:
 
@@ -43,14 +43,14 @@ with DAG(
     build_save_model_task = PythonOperator(
         task_id='build_save_model_task',
         python_callable=build_save_model,
-        op_args=[data_preprocessing_task.output, "model.sav"],
+        op_args=[data_preprocessing_task.output, "santhosh_kmeans_model.pkl"],  # CUSTOMIZATION 8: Custom model filename
     )
 
     # Task to load a model using the 'load_model_elbow' function, depends on 'build_save_model_task'
     load_model_task = PythonOperator(
         task_id='load_model_task',
         python_callable=load_model_elbow,
-        op_args=["model.sav", build_save_model_task.output],
+        op_args=["santhosh_kmeans_model.pkl", build_save_model_task.output],  # CUSTOMIZATION 9: Custom model filename
     )
 
     # Set task dependencies
