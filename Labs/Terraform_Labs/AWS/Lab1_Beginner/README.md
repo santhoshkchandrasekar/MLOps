@@ -1,184 +1,260 @@
 # Terraform Beginner Lab
+**Santhoshkumar Chandrasekar**
 
-## Objective
-Learn the fundamentals of Terraform by creating, managing, and destroying a simple AWS infrastructure resource. By the end of this lab, students will:
+---
 
-- Understand the purpose of Terraform.
-- Install and configure Terraform.
-- Write and apply a basic Terraform configuration.
-- Use Terraform commands to manage infrastructure.
-- You can follow along step by step, or you can just run the commands using the code in `main.tf`.
-- The video for the lab can be found [here](). # need to add a video link
+## Overview
+
+This lab demonstrates the fundamentals of Terraform by provisioning real AWS infrastructure using Infrastructure as Code (IaC). The configuration deploys an EC2 instance, an S3 bucket, a VPC, and a Subnet — all in the `us-west-2` (Oregon) region — and then cleanly destroys them using `terraform destroy`.
+
+---
+
+## What I Did Differently from the Professor's Version
+
+The base lab provided by the professor was a starting point. I made the following intentional changes to demonstrate independent understanding of Terraform:
+
+| Feature | Professor's Version | My Version |
+|---|---|---|
+| AWS Region | `us-east-1` (N. Virginia) | `us-west-2` (Oregon) |
+| Instance Type | `t2.micro` | `t3.micro` (newer generation, better performance) |
+| AMI | Amazon Linux 2 for us-east-1 | Amazon Linux 2023 for us-west-2 |
+| S3 Bucket | ❌ Not included | ✅ Added `santhosh-terraform-lab-bucket-2026` |
+| Resource Tags | Basic or none | Full tags on every resource: `Name`, `Environment`, `Project`, `Owner` |
+
+The S3 bucket addition required understanding how Terraform manages multiple resource types in a single configuration and how AWS globally unique bucket naming works. The comprehensive tagging strategy reflects real-world IaC practices where every resource is traceable to an owner and project.
+
+---
 
 ## Prerequisites
-- An AWS account.
-- AWS access keys set up.
-- Terraform installed on your local machine (https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli).
 
-### Create AWS access key
+- AWS account with access keys (Access Key ID + Secret Access Key)
+- Terraform installed
+- Windows PowerShell (or terminal on macOS/Linux)
 
-1. Open the AWS console.
-2. Navigate to the **Security Credentials** page under **IAM**.
-3. Click **Create access key**.
-4. Enter a name for the key (for example, **mykey**).
-5. Click **Create**.
-6. Copy the **Access key ID** and **Secret access key** to your clipboard. This is the only time you will be able to see the secret key. Copy the key to a secure location.
+---
 
-### Set the environment variables
+## Setup Instructions
 
-1. Open a terminal or command prompt.
-2. Run the following command to set the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables:
+### 1. Install Terraform (Windows)
 
-    ```bash
-    export AWS_ACCESS_KEY_ID=<your-access-key-id>
-    export AWS_SECRET_ACCESS_KEY=<your-secret-access-key>
-    ```
+Open PowerShell as Administrator and run:
 
-    Replace `<your-access-key-id>` and `<your-secret-access-key>` with your actual access key ID and secret access key.
+```powershell
+winget install HashiCorp.Terraform
+```
 
-    This will only work for the current session. If you want to set these variables permanently, you will have to set the environment variables in your system's environment variables, based on the OS you are using.
+Close and reopen PowerShell, then verify:
 
-## Part 1: Setting up Terraform
+```powershell
+terraform --version
+# Terraform v1.14.7
+```
 
-1. Verify Terraform is installed on your local machine.
+### 2. Set AWS Credentials
 
-    ```bash
-    terraform --version
-    ```
+```powershell
+$env:AWS_ACCESS_KEY_ID="your-access-key-id"
+$env:AWS_SECRET_ACCESS_KEY="your-secret-access-key"
+```
 
-2. Create a directory for your Terraform files.
+> These are session-scoped variables. Re-run them if you open a new PowerShell window.
 
-    ```bash
-    mkdir terraform-lab-aws
-    cd terraform-lab-aws
-    ```
+### 3. Create Project Folder
 
-3. Create a file named `main.tf` and add the following code:
+```powershell
+cd ~
+mkdir terraform-lab-aws
+cd terraform-lab-aws
+```
 
-    ```h
-    provider "aws" {
-        region = "us-east-1"
+---
+
+## Terraform Configuration (`main.tf`)
+
+```hcl
+# Santhosh Chandra Sekar - MLOps Terraform Lab
+# Region: us-west-2 (Oregon)
+# Custom changes: t3.micro, Amazon Linux 2023, S3 bucket, full tags on all resources
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
     }
+  }
+}
 
-    resource "aws_instance" "myec2" {
-        ami = "ami-0e2c8caa4b6378d8c"
-        instance_type = "t2.micro"
-    }
-    ```
+provider "aws" {
+  region = "us-west-2"
+}
 
-    The `provider` block configures the AWS provider to use the `us-east-1` region. The `resource` block creates an EC2 instance with the specified AMI and instance type. You can create any other ec2 instance you want by modifying the `ami` and `instance_type` values.
+# EC2 Instance - t3.micro with Amazon Linux 2023 AMI (us-west-2)
+resource "aws_instance" "myec2" {
+  ami           = "ami-05572e392e80aee89"
+  instance_type = "t3.micro"
 
-4. Initialize Terraform:
+  tags = {
+    Name        = "Santhosh-EC2"
+    Environment = "Dev"
+    Project     = "MLOps-TerraformLab"
+    Owner       = "Santhosh"
+  }
+}
 
-    ```bash
-    terraform init
-    ```
-    On initialization, Terraform will download the required providers and plugins.
+# S3 Bucket - added beyond the base lab
+resource "aws_s3_bucket" "mylabbucket" {
+  bucket = "santhosh-terraform-lab-bucket-2026"
 
-## Part 2: Applying the Terraform Configuration
+  tags = {
+    Name        = "Santhosh-Lab-Bucket"
+    Environment = "Dev"
+    Project     = "MLOps-TerraformLab"
+    Owner       = "Santhosh"
+  }
+}
 
-1. **Plan the infrastructure**: Review the changes that Terraform will make to your infrastructure.
+# VPC
+resource "aws_vpc" "myvpc" {
+  cidr_block = "10.0.0.0/16"
 
-    ```bash
-    terraform plan
-    ```
-    The `plan` command will show the changes that Terraform will make to your infrastructure.
+  tags = {
+    Name        = "Santhosh-VPC"
+    Environment = "Dev"
+    Project     = "MLOps-TerraformLab"
+    Owner       = "Santhosh"
+  }
+}
 
-2. **Apply the infrastructure**: Apply the changes to your infrastructure.
+# Subnet inside the VPC
+resource "aws_subnet" "mysubnet1" {
+  vpc_id     = aws_vpc.myvpc.id
+  cidr_block = "10.0.1.0/24"
 
-    ```bash
-    terraform apply
-    ```
+  tags = {
+    Name        = "Santhosh-Subnet1"
+    Environment = "Dev"
+    Project     = "MLOps-TerraformLab"
+    Owner       = "Santhosh"
+  }
+}
+```
 
-    The `apply` command will apply the changes that Terraform made to your infrastructure. Confirm by typing `yes` at the prompt. You can also use the `terraform apply -auto-approve` command to automatically approve the changes.
+---
 
-3. **View the changes in the AWS console**: Check the AWS console to see the changes that Terraform made to your infrastructure.
+## Running the Lab
 
-    - Open the AWS console.
-    - Navigate to the **EC2** page.
-    - Find the instance that Terraform created.
-    - Click on the instance to view its details.
+### Initialize
+Downloads the AWS provider plugin:
+```powershell
+terraform init
+```
 
-## Part 3: Modifying Resources
+### Plan
+Preview all resources before creating anything:
+```powershell
+terraform plan
+```
+Expected: `Plan: 4 to add, 0 to change, 0 to destroy`
 
-You can modify any resource in the configuration file and apply the changes using the `terraform apply` command.
+### Apply
+Create all resources in AWS:
+```powershell
+terraform apply
+```
+Type `yes` when prompted.  
+Expected: `Apply complete! Resources: 4 added, 0 changed, 0 destroyed`
 
-1. **Modify the EC2 instance**: Add the Name tag to the EC2 instance.
+### Destroy
+Clean up all resources when done:
+```powershell
+terraform destroy
+```
+Type `yes` when prompted.  
+Expected: `Destroy complete! Resources: 4 destroyed`
 
-    ```h
-    resource "aws_instance" "myec2" {
-        ami = "ami-0e2c8caa4b6378d8c"
-        instance_type = "t2.micro"
-        tags = {
-            Name = "MyEC2Instance"
-        }
-    }
-    ```
+---
 
-2. **Apply the changes**: Apply the changes to your infrastructure.
+## AWS Console Verification
 
-    ```bash
-    terraform apply
-    ```
+> All resources were deployed in **US West (Oregon) — us-west-2**. Make sure to switch to this region in the AWS Console before verifying.
 
-3. **View the changes in the AWS console**: Check the EC2 instance in the AWS console and confirm that the Name tag was added.
+### EC2 Instance — `Santhosh-EC2`
+- Instance ID: `i-085800c3b6dd2e531`
+- Type: `t3.micro` (upgraded from professor's `t2.micro`)
+- State: Running
+- AMI: Amazon Linux 2023 for `us-west-2`
 
-## Part 4: Adding more resources
+![EC2 Instance running in us-west-2](screenshots/01-ec2-instance.png)
 
-Let's explore adding another resource to the configuration file.
+---
 
-1. **Add a VPC and subnet**: Add a VPC and subnet to the configuration file.
+### S3 Bucket — `santhosh-terraform-lab-bucket-2026`
+- Region: `us-west-2`
+- This resource was **not part of the professor's base lab** — added independently to demonstrate multi-resource Terraform configurations
 
-    ```h
-    resource "aws_vpc" "myvpc" {
-        cidr_block = "10.0.0.0/16"
-        tags = {
-            Name = "myvpc"
-        }
-    }
+![S3 Bucket created in us-west-2](screenshots/02-s3-bucket.png)
 
-    resource "aws_subnet" "mysubnet1" {
-        vpc_id = aws_vpc.myvpc.id
-        cidr_block = "10.0.1.0/24"
-        tags = {
-            Name = "mysubnet1"
-        }
-    }
-    ```
-    The `aws_vpc` resource creates a VPC with the specified CIDR block. The `aws_subnet` resource creates a subnet within the VPC with the specified CIDR block. The `vpc_id` attribute is used to specify the VPC in which the subnet should be created.
+---
 
-2. **Apply the changes**: Apply the changes to your infrastructure.
+### VPC — `Santhosh-VPC`
+- VPC ID: `vpc-0d9c79fd59f2e1335`
+- CIDR Block: `10.0.0.0/16`
+- State: Available
 
-    ```bash
-    terraform apply
-    ```
+![VPC created in us-west-2](screenshots/03-vpc.png)
 
-3. **View the changes in the AWS console**: Check the VPC and subnet in the AWS console and confirm that they were created.
+---
 
-## Part 5: Destroying Resources
+### Subnet — `Santhosh-Subnet1`
+- Subnet ID: `subnet-0d956069d71b0b4d8`
+- CIDR Block: `10.0.1.0/24`
+- Linked to `Santhosh-VPC` via `vpc_id` reference in `main.tf`
 
-You can destroy any resource in the configuration file and apply the changes using the `terraform destroy` command.
+![Subnet created inside Santhosh-VPC](screenshots/04-subnet.png)
 
-1. **Use the `terraform destroy` command**: Destroy the resources that Terraform created.
+---
 
-    ```bash
-    terraform destroy
-    ```
+## Understanding Terraform Files
 
-    The `destroy` command will destroy the resources that Terraform created. Confirm by typing `yes` at the prompt.
+**`main.tf`** — The configuration file. Defines all providers and resources. This is the only file you write manually.
 
-2. **View the changes in the AWS console**: Check the resources in the AWS console and confirm that they were destroyed.
+**`terraform.tfstate`** — Auto-generated after `terraform apply`. Tracks the real-world state of every resource Terraform manages. Never edit this manually — Terraform uses it to calculate diffs on future applies.
 
-3. **Destroy using the config file**: Another way to destroy any resource is to remove it from the configuration file, and then run `terraform apply`. Terraform will detect the changes and destroy the resource. You can view the changes that are going to be applied using `terraform plan`, before applying the changes.
+**`.terraform/`** — Created by `terraform init`. Contains downloaded provider binaries. Add this to `.gitignore` and never commit it.
 
-## Part 6: Understanding different Terraform files
+---
 
-1. **State file**:
-    Terraform uses state files to keep track of the resources it manages. The state file is created when you run `terraform apply` and contains information about the resources Terraform manages.
+## Running on Any Operating System
 
-    The state file `terraform.tfstate` is a JSON file that contains the current state of the resources Terraform manages.
+### macOS / Linux
+Use `export` instead of `$env:` for credentials:
 
-    State files are critical for tracking changes; ensure they are securely stored. No manual changes should ever be made to the state file.
+```bash
+export AWS_ACCESS_KEY_ID="your-access-key-id"
+export AWS_SECRET_ACCESS_KEY="your-secret-access-key"
 
-2. **Terraform directory**:
-    When you execute `terraform init`, a `.terraform` directory is created in the current working directory, and all the required plugins and provider files are downloaded in this directory.
+terraform init
+terraform plan
+terraform apply
+```
+
+### Windows (PowerShell)
+```powershell
+$env:AWS_ACCESS_KEY_ID="your-access-key-id"
+$env:AWS_SECRET_ACCESS_KEY="your-secret-access-key"
+
+terraform init
+terraform plan
+terraform apply
+```
+
+> **Note:** If you change the S3 bucket name, make sure it is globally unique across all AWS accounts — S3 bucket names are shared in a global namespace.
+
+---
+
+## References
+
+- [Terraform Documentation](https://developer.hashicorp.com/terraform/docs)
+- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
+- [AWS Free Tier](https://aws.amazon.com/free/)
