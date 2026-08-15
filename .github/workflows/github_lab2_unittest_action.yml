@@ -1,9 +1,7 @@
 name: Testing Github Lab1 Python Unittests
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build:
